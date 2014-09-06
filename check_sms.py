@@ -34,46 +34,48 @@ while True:
 
 	messagefound = False
 
-	for p in phonebook:
+	#for p in phonebook:
 
-		messages = client.messages.list(
-			from_ = p,  
-			after = ( now - timedelta(minutes = 1) )
-		) 
-		 
-		for m in messages: 
+	messages = client.messages.list(
+		#from_ = p,  
+		after = ( now - timedelta(minutes = 1) )
+	) 
+	 
+	for m in messages: 
 
-			then = datetime.fromtimestamp(time.mktime(parsedate(m.date_sent)))
+		if any( m.from_ in p for p in phonebook):
 
-			# message was received with delta
-			if ( ( now - then ) <= timedelta(minutes = 1) ) and ( ( now - then ) >= timedelta(minutes = 0) ):
-				
-				phrase = m.body.lower()
+		then = datetime.fromtimestamp(time.mktime(parsedate(m.date_sent)))
 
-				# check if it matches passcode
-				if any( phrase in codes for codes in passcodes):
-					logging.info( "%s - %s @ %s ", m.from_, m.body, m.date_sent )
+		# message was received with delta
+		if ( ( now - then ) <= timedelta(minutes = 1) ) and ( ( now - then ) >= timedelta(minutes = 0) ):
+			
+			phrase = m.body.lower()
 
-					# TODO: remove debug info
-					print m.date_sent, " - from ", m.from_, " - ", m.body, " delta: ", ( now - then )
+			# check if it matches passcode
+			if any( phrase in codes for codes in passcodes):
+				logging.info( "%s - %s @ %s ", m.from_, m.body, m.date_sent )
 
-					try:
-						# execute trigger here
-						client.messages.create(
-							to=m.from_, 
-							from_=defaultfrom, 
-							body="I got your message. Open sesame!",  
-						)
-					except:
-						client.messages.create(
-							to=defaultto, 
-							from_=defaultfrom, 
-							body=m.from_,  
-						)
-						pass
+				# TODO: remove debug info
+				print m.date_sent, " - from ", m.from_, " - ", m.body, " delta: ", ( now - then )
 
-					messagefound = True
-					break
+				try:
+					# execute trigger here
+					client.messages.create(
+						to=m.from_, 
+						from_=defaultfrom, 
+						body="I got your message. Open sesame!",  
+					)
+				except:
+					client.messages.create(
+						to=defaultto, 
+						from_=defaultfrom, 
+						body=m.from_,  
+					)
+					pass
 
-		if messagefound:
-			break
+				messagefound = True
+				break
+
+	if messagefound:
+		break
